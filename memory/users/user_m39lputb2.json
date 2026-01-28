@@ -1,0 +1,16 @@
+{
+  "id": "user_m39lputb2",
+  "name": "Guest User",
+  "voiceId": null,
+  "phoneNumber": null,
+  "email": null,
+  "firstMeetAt": "2026-01-27T20:51:11.086Z",
+  "lastSeenAt": "2026-01-27T20:51:11.086Z",
+  "preferences": {
+    "emoteTone": "warm",
+    "voiceType": "Lisa",
+    "updateFrequency": "weekly"
+  },
+  "relationType": "user",
+  "notes": ""
+}

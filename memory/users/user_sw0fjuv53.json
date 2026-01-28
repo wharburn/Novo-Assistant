@@ -1,0 +1,16 @@
+{
+  "id": "user_sw0fjuv53",
+  "name": "User",
+  "voiceId": null,
+  "phoneNumber": null,
+  "email": null,
+  "firstMeetAt": "2026-01-27T23:55:45.405Z",
+  "lastSeenAt": "2026-01-27T23:55:45.405Z",
+  "preferences": {
+    "emoteTone": "warm",
+    "voiceType": "Lisa",
+    "updateFrequency": "weekly"
+  },
+  "relationType": "user",
+  "notes": ""
+}

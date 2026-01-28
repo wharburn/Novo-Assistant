@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: novo-avatar-portal
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: DEEPGRAM_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: HUME_API_KEY
+        sync: false
+      - key: HUME_SECRET_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: USE_DEEPGRAM_FLUX
+        value: true
+

@@ -1,0 +1,16 @@
+{
+  "id": "user_lkvaexad8",
+  "name": "User",
+  "voiceId": null,
+  "phoneNumber": null,
+  "email": null,
+  "firstMeetAt": "2026-01-27T23:08:32.562Z",
+  "lastSeenAt": "2026-01-27T23:08:32.562Z",
+  "preferences": {
+    "emoteTone": "warm",
+    "voiceType": "Lisa",
+    "updateFrequency": "weekly"
+  },
+  "relationType": "user",
+  "notes": ""
+}

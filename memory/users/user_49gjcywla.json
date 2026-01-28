@@ -1,0 +1,16 @@
+{
+  "id": "user_49gjcywla",
+  "name": "Guest User",
+  "voiceId": null,
+  "phoneNumber": null,
+  "email": null,
+  "firstMeetAt": "2026-01-27T21:14:40.564Z",
+  "lastSeenAt": "2026-01-27T21:14:40.564Z",
+  "preferences": {
+    "emoteTone": "warm",
+    "voiceType": "Lisa",
+    "updateFrequency": "weekly"
+  },
+  "relationType": "user",
+  "notes": ""
+}
