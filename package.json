@@ -2,7 +2,7 @@
   "name": "novo-avatar-portal",
   "version": "1.0.0",
   "description": "Novo Avatar Portal - Interactive voice conversation with memory",
-  "main": "portal-backend.js",
+  "main": "avatar-portal/novo-voice-backend.js",
   "scripts": {
     "start": "node avatar-portal/novo-voice-backend.js",
     "start:old": "node portal-backend.js",
