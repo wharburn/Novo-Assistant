@@ -23,9 +23,9 @@ class DeepgramService {
       model: 'nova-2',
       language: 'en',
       smart_format: true,
-      vad: true,  // ✅ Voice Activity Detection - detects when speech starts/stops
+      vad: true, // ✅ Voice Activity Detection - detects when speech starts/stops
       diarize: false,
-      ...options
+      ...options,
     };
 
     const queryParams = new URLSearchParams(defaults).toString();
@@ -42,10 +42,10 @@ class DeepgramService {
       model: 'nova-2',
       language: 'en',
       smart_format: true,
-      vad: true,  // ✅ Voice Activity Detection - detects when speech starts/stops
+      vad: true, // ✅ Voice Activity Detection - detects when speech starts/stops
       encoding: 'linear16',
       sample_rate: 16000,
-      ...options
+      ...options,
     };
 
     const queryParams = new URLSearchParams(defaults).toString();
@@ -61,14 +61,15 @@ class DeepgramService {
     const defaults = {
       model: 'aura-asteria-en', // Deepgram's Aura voice
       encoding: 'mp3',
-      ...options
+      ...options,
     };
 
     const body = JSON.stringify({ text });
     const queryParams = new URLSearchParams(defaults).toString();
     const url = `/speak?${queryParams}`;
 
-    return this.makeRequest('POST', url, body, 'application/json');
+    // TTS returns binary audio, not JSON
+    return this.makeTTSRequest('POST', url, body);
   }
 
   /**
@@ -78,7 +79,7 @@ class DeepgramService {
     const defaults = {
       model: 'aura-asteria-en',
       encoding: 'mp3',
-      ...options
+      ...options,
     };
 
     const body = JSON.stringify({ text });
@@ -96,7 +97,7 @@ class DeepgramService {
     const defaults = {
       model: 'nova-2',
       diarize: true, // Enable speaker diarization
-      ...options
+      ...options,
     };
 
     const queryParams = new URLSearchParams(defaults).toString();
@@ -107,7 +108,7 @@ class DeepgramService {
     // Extract speaker info from diarization
     if (result.results?.channels?.[0]?.alternatives?.[0]?.words) {
       const speakers = new Set();
-      result.results.channels[0].alternatives[0].words.forEach(word => {
+      result.results.channels[0].alternatives[0].words.forEach((word) => {
         if (word.speaker !== undefined) {
           speakers.add(word.speaker);
         }
@@ -115,11 +116,65 @@ class DeepgramService {
       return {
         speakers: Array.from(speakers),
         speakerCount: speakers.size,
-        transcript: result.results.channels[0].alternatives[0].transcript
+        transcript: result.results.channels[0].alternatives[0].transcript,
       };
     }
 
     return null;
+  }
+
+  /**
+   * Make TTS request to Deepgram (returns binary audio)
+   */
+  async makeTTSRequest(method, path, body) {
+    return new Promise((resolve, reject) => {
+      const url = new URL(this.baseUrl + path);
+
+      const options = {
+        method,
+        hostname: url.hostname,
+        path: url.pathname + url.search,
+        headers: {
+          Authorization: `Token ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Novo-Avatar-Portal/1.0',
+        },
+      };
+
+      if (typeof body === 'string' || Buffer.isBuffer(body)) {
+        options.headers['Content-Length'] = Buffer.byteLength(body);
+      }
+
+      const req = https.request(options, (res) => {
+        const chunks = [];
+
+        res.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+
+        res.on('end', () => {
+          if (res.statusCode >= 400) {
+            const errorData = Buffer.concat(chunks).toString();
+            return reject(new Error(`Deepgram TTS error: ${res.statusCode} - ${errorData}`));
+          }
+
+          // Return audio buffer
+          resolve(Buffer.concat(chunks));
+        });
+      });
+
+      req.on('error', reject);
+
+      if (body) {
+        if (typeof body === 'string') {
+          req.write(body);
+        } else {
+          req.write(body);
+        }
+      }
+
+      req.end();
+    });
   }
 
   /**
@@ -134,10 +189,10 @@ class DeepgramService {
         hostname: url.hostname,
         path: url.pathname + url.search,
         headers: {
-          'Authorization': `Token ${this.apiKey}`,
+          Authorization: `Token ${this.apiKey}`,
           'Content-Type': contentType,
-          'User-Agent': 'Novo-Avatar-Portal/1.0'
-        }
+          'User-Agent': 'Novo-Avatar-Portal/1.0',
+        },
       };
 
       if (typeof body === 'string' || Buffer.isBuffer(body)) {
@@ -195,10 +250,10 @@ class DeepgramService {
         hostname: url.hostname,
         path: url.pathname + url.search,
         headers: {
-          'Authorization': `Token ${this.apiKey}`,
+          Authorization: `Token ${this.apiKey}`,
           'Transfer-Encoding': 'chunked',
-          'User-Agent': 'Novo-Avatar-Portal/1.0'
-        }
+          'User-Agent': 'Novo-Avatar-Portal/1.0',
+        },
       };
 
       const req = https.request(options, (res) => {
@@ -244,7 +299,7 @@ class DeepgramService {
       intents: true,
       sentiment: true,
       topics: true,
-      ...options
+      ...options,
     };
 
     const queryParams = new URLSearchParams(defaults).toString();
@@ -262,7 +317,7 @@ class DeepgramService {
       language: 'en',
       smart_format: true,
       diarize: false,
-      ...agentConfig
+      ...agentConfig,
     };
 
     // Voice Agent API endpoint
@@ -279,8 +334,20 @@ class DeepgramService {
     return [
       { id: 'aura-asteria-en', name: 'Asteria', language: 'en', gender: 'female', style: 'warm' },
       { id: 'aura-luna-en', name: 'Luna', language: 'en', gender: 'female', style: 'professional' },
-      { id: 'aura-stella-en', name: 'Stella', language: 'en', gender: 'female', style: 'energetic' },
-      { id: 'aura-athena-en', name: 'Athena', language: 'en', gender: 'female', style: 'thoughtful' }
+      {
+        id: 'aura-stella-en',
+        name: 'Stella',
+        language: 'en',
+        gender: 'female',
+        style: 'energetic',
+      },
+      {
+        id: 'aura-athena-en',
+        name: 'Athena',
+        language: 'en',
+        gender: 'female',
+        style: 'thoughtful',
+      },
     ];
   }
 
@@ -289,9 +356,7 @@ class DeepgramService {
    */
   async getSupportedLanguages() {
     // Deepgram supports 100+ languages
-    return [
-      'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'nl', 'pl'
-    ];
+    return ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'nl', 'pl'];
   }
 }
 

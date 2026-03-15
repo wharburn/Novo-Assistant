@@ -45,6 +45,7 @@ class NovoVoiceApp {
       tts_model: 'aura-asteria-en',
       eot_threshold: 0.8,
       eot_timeout_ms: 3000,
+      hume_evi_enabled: false,
     };
 
     // User ID
@@ -117,6 +118,7 @@ class NovoVoiceApp {
     this.llmModel = document.getElementById('llmModel');
     this.ttsModel = document.getElementById('ttsModel');
     this.microphoneSelect = document.getElementById('microphoneSelect');
+    this.humeEVIToggle = document.getElementById('humeEVIToggle');
     this.saveSettingsBtn = document.getElementById('saveSettings');
 
     // Camera state
@@ -160,6 +162,9 @@ class NovoVoiceApp {
     }
     if (this.ttsModel && this.config.tts_model) {
       this.ttsModel.value = this.config.tts_model;
+    }
+    if (this.humeEVIToggle && this.config.hume_evi_enabled !== undefined) {
+      this.humeEVIToggle.checked = this.config.hume_evi_enabled;
     }
     console.log('✅ Applied saved settings to UI');
   }
@@ -363,6 +368,20 @@ class NovoVoiceApp {
       this.showSettingsStatus('⚠️ Click "Save Settings" to persist', '#FFA500');
     });
 
+    // Hume EVI toggle
+    this.humeEVIToggle.addEventListener('change', (e) => {
+      this.config.hume_evi_enabled = e.target.checked;
+      this.sendConfigUpdate();
+      this.showSettingsStatus('⚠️ Click "Save Settings" to persist', '#FFA500');
+
+      // Show status message
+      if (e.target.checked) {
+        this.showStatus('🎭 Hume EVI emotion detection enabled', 'success');
+      } else {
+        this.showStatus('Hume EVI emotion detection disabled', 'info');
+      }
+    });
+
     // Save settings button
     this.saveSettingsBtn.addEventListener('click', () => {
       this.saveSettings();
@@ -523,7 +542,8 @@ class NovoVoiceApp {
 
     this.socket.on('agent_speaking', async (data) => {
       console.log('🔊 Agent speaking event received');
-      console.log('📊 Audio data:', data.audio ? `${data.audio.length} bytes` : 'NO AUDIO');
+      console.log('📊 Audio format:', data.audioFormat || 'unknown');
+      console.log('📊 Audio data:', data.audio ? `${data.audio.length} chars` : 'NO AUDIO');
       console.log('📝 Text:', data.text);
 
       // Mark activity (reset 15s idle timeout)
@@ -539,10 +559,34 @@ class NovoVoiceApp {
 
       this.showStatus('Speaking...', 'info');
 
+      // Add Novo's response to transcript
+      if (data.text) {
+        const agentMsg = document.createElement('div');
+        agentMsg.className = 'transcript-agent';
+        agentMsg.innerHTML = `<strong>NoVo:</strong> ${data.text}`;
+        this.transcript.prepend(agentMsg);
+      }
+
+      // Convert base64 audio to ArrayBuffer
+      let audioData = null;
+      if (data.audio && data.audioFormat === 'base64') {
+        console.log('🔄 Converting base64 to ArrayBuffer...');
+        const binaryString = atob(data.audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        audioData = bytes.buffer;
+        console.log(`✅ Converted to ArrayBuffer (${audioData.byteLength} bytes)`);
+      } else if (data.audio) {
+        // Fallback for other formats
+        audioData = data.audio;
+      }
+
       // Play audio and animate avatar
-      if (data.audio && data.audio.length > 0) {
+      if (audioData) {
         console.log('▶️ Starting audio playback...');
-        await this.playAudioAndAnimate(data.audio, data.text);
+        await this.playAudioAndAnimate(audioData, data.text);
         console.log('✅ Audio playback complete');
       } else {
         console.warn('⚠️ No audio data received!');
@@ -819,8 +863,9 @@ class NovoVoiceApp {
       const audioData = new Uint8Array(audioBytes);
       console.log('🎵 Audio data length:', audioData.length);
 
-      // Convert PCM16 to AudioBuffer
-      const audioBuffer = await this.pcm16ToAudioBuffer(audioData);
+      // Use browser's native decoder for MP3 audio from Deepgram TTS
+      console.log('🎵 Decoding MP3 audio...');
+      const audioBuffer = await this.audioContext.decodeAudioData(audioData.buffer);
       console.log('🎵 AudioBuffer created, duration:', audioBuffer.duration);
 
       // Play audio
@@ -1265,7 +1310,7 @@ class NovoVoiceApp {
 
   sendConfigUpdate() {
     if (this.socket && this.isConnected) {
-      this.socket.emit('update_config', this.config);
+      this.socket.emit('config-update', this.config);
       console.log('📤 Config updated:', this.config);
     }
   }
